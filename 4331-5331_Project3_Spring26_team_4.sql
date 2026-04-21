@@ -1,10 +1,9 @@
--- ============================================================
--- CSE 4331/5331 Spring 2026 - Project 3
--- Task 2: SQL Query on IMDb Oracle Database (omega)
--- ============================================================
+CSE 4331/5331 Spring 2026 - Project 3
+Task 2: SQL Query on IMDb Oracle Database
+
 
 SET ECHO ON
-SPOOL 4331-5331_Proj3Spring26_team_team4_output.txt
+SPOOL 4331-5331_Project3_Spring26_team_4_output.txt
 
 -- ENGLISH DESCRIPTION:
 -- For the period [2001-2010] and genre combination Comedy + Romance:
