@@ -1,0 +1,243 @@
+SQL>
+SQL> -- ENGLISH DESCRIPTION:
+SQL> -- For the period [2001-2010] and genre combination Comedy + Romance:
+SQL> -- Find the TOP 5 movies that:
+SQL> --   1. Were released between 2001 and 2010 (inclusive)
+SQL> --   2. Contain BOTH 'Comedy' AND 'Romance' in their genre list
+SQL> --   3. Have received at least 150,000 votes
+SQL> -- Output movie name, rating, votes, and lead actor/actress (ordering=1)
+SQL> -- Ordered by rating descending, votes descending as tiebreaker
+SQL>
+SQL> SELECT *
+  2  FROM (
+  3      SELECT
+  4          tb.PRIMARYTITLE         AS movie_name,
+  5          tb.STARTYEAR            AS release_year,
+  6          tr.AVERAGERATING        AS imdb_rating,
+  7          tr.NUMVOTES             AS num_votes,
+  8          nb.PRIMARYNAME          AS lead_actor_actress
+  9      FROM
+ 10          imdb00.TITLE_BASICS     tb
+ 11          JOIN imdb00.TITLE_RATINGS tr
+ 12              ON tb.TCONST = tr.TCONST
+ 13          LEFT JOIN imdb00.TITLE_PRINCIPALS tp
+ 14              ON tb.TCONST = tp.TCONST
+ 15              AND tp.ORDERING = '1'
+ 16              AND tp.CATEGORY IN ('actor', 'actress')
+ 17          LEFT JOIN imdb00.NAME_BASICS nb
+ 18              ON tp.NCONST = nb.NCONST
+ 19      WHERE
+ 20          tb.TITLETYPE = 'movie'
+ 21          AND tb.STARTYEAR BETWEEN '2001' AND '2010'
+ 22          AND tb.GENRES LIKE '%Comedy%'
+ 23          AND tb.GENRES LIKE '%Romance%'
+ 24          AND tb.GENRES NOT LIKE '\N'
+ 25          AND tr.NUMVOTES >= 150000
+ 26      ORDER BY
+ 27          tr.AVERAGERATING DESC,
+ 28          tr.NUMVOTES      DESC
+ 29  )
+ 30  WHERE ROWNUM <= 5;
+
+MOVIE_NAME
+--------------------------------------------------------------------------------
+RELEASE_YE IMDB_RATING  NUM_VOTES
+---------- ----------- ----------
+LEAD_ACTOR_ACTRESS
+--------------------------------------------------------------------------------
+Amelie
+2001               8.3     748048
+Audrey Tautou
+
+500 Days of Summer
+2009               7.7     507857
+Zooey Deschanel
+
+MOVIE_NAME
+--------------------------------------------------------------------------------
+RELEASE_YE IMDB_RATING  NUM_VOTES
+---------- ----------- ----------
+LEAD_ACTOR_ACTRESS
+--------------------------------------------------------------------------------
+
+Love Actually
+2003               7.6     476576
+Hugh Grant
+
+Sideways
+2004               7.5     190672
+
+MOVIE_NAME
+--------------------------------------------------------------------------------
+RELEASE_YE IMDB_RATING  NUM_VOTES
+---------- ----------- ----------
+LEAD_ACTOR_ACTRESS
+--------------------------------------------------------------------------------
+Paul Giamatti
+
+The Terminal
+2004               7.4     452046
+Tom Hanks
+
+
+SQL>
+SQL> EXPLAIN PLAN FOR
+  2  SELECT *
+  3  FROM (
+  4      SELECT
+  5          tb.PRIMARYTITLE         AS movie_name,
+  6          tb.STARTYEAR            AS release_year,
+  7          tr.AVERAGERATING        AS imdb_rating,
+  8          tr.NUMVOTES             AS num_votes,
+  9          nb.PRIMARYNAME          AS lead_actor_actress
+ 10      FROM
+ 11          imdb00.TITLE_BASICS     tb
+ 12          JOIN imdb00.TITLE_RATINGS tr
+ 13              ON tb.TCONST = tr.TCONST
+ 14          LEFT JOIN imdb00.TITLE_PRINCIPALS tp
+ 15              ON tb.TCONST = tp.TCONST
+ 16              AND tp.ORDERING = '1'
+ 17              AND tp.CATEGORY IN ('actor', 'actress')
+ 18          LEFT JOIN imdb00.NAME_BASICS nb
+ 19              ON tp.NCONST = nb.NCONST
+ 20      WHERE
+ 21          tb.TITLETYPE = 'movie'
+ 22          AND tb.STARTYEAR BETWEEN '2001' AND '2010'
+ 23          AND tb.GENRES LIKE '%Comedy%'
+ 24          AND tb.GENRES LIKE '%Romance%'
+ 25          AND tb.GENRES NOT LIKE '\N'
+ 26          AND tr.NUMVOTES >= 150000
+ 27      ORDER BY
+ 28          tr.AVERAGERATING DESC,
+ 29          tr.NUMVOTES      DESC
+ 30  )
+ 31  WHERE ROWNUM <= 5;
+
+Explained.
+
+SQL>
+SQL> SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+Plan hash value: 1471918562
+
+--------------------------------------------------------------------------------
+-----------------------
+
+| Id  | Operation                          | Name             | Rows  | Bytes |
+Cost (%CPU)| Time     |
+
+--------------------------------------------------------------------------------
+-----------------------
+
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                   |                  |     5 |   415 |
+  139K  (1)| 00:00:06 |
+
+|*  1 |  COUNT STOPKEY                     |                  |       |       |
+           |          |
+
+|   2 |   VIEW                             |                  |   305 | 25315 |
+  139K  (1)| 00:00:06 |
+
+|*  3 |    SORT ORDER BY STOPKEY           |                  |   305 | 59170 |
+  139K  (1)| 00:00:06 |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+
+|   4 |     NESTED LOOPS OUTER             |                  |   305 | 59170 |
+  139K  (1)| 00:00:06 |
+
+|*  5 |      HASH JOIN OUTER               |                  |   305 | 46970 |
+  138K  (1)| 00:00:06 |
+
+|   6 |       JOIN FILTER CREATE           | :BF0000          |   259 | 29785 |
+ 4754   (1)| 00:00:01 |
+
+|   7 |        NESTED LOOPS                |                  |   259 | 29785 |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+ 4754   (1)| 00:00:01 |
+
+|   8 |         NESTED LOOPS               |                  |  1825 | 29785 |
+ 4754   (1)| 00:00:01 |
+
+|*  9 |          TABLE ACCESS STORAGE FULL | TITLE_RATINGS    |  1825 | 31025 |
+ 1103   (1)| 00:00:01 |
+
+|* 10 |          INDEX UNIQUE SCAN         | SYS_C0032294     |     1 |       |
+    1   (0)| 00:00:01 |
+
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+|* 11 |         TABLE ACCESS BY INDEX ROWID| TITLE_BASICS     |     1 |    98 |
+    2   (0)| 00:00:01 |
+
+|  12 |       JOIN FILTER USE              | :BF0000          |  3214K|   119M|
+  133K  (1)| 00:00:06 |
+
+|* 13 |        TABLE ACCESS STORAGE FULL   | TITLE_PRINCIPALS |  3214K|   119M|
+  133K  (1)| 00:00:06 |
+
+|  14 |      TABLE ACCESS BY INDEX ROWID   | NAME_BASICS      |     1 |    40 |
+    2   (0)| 00:00:01 |
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+
+|* 15 |       INDEX UNIQUE SCAN            | SYS_C0031505     |     1 |       |
+    1   (0)| 00:00:01 |
+
+--------------------------------------------------------------------------------
+-----------------------
+
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+   1 - filter(ROWNUM<=5)
+   3 - filter(ROWNUM<=5)
+   5 - access("TB"."TCONST"="TP"."TCONST"(+))
+   9 - storage("TR"."NUMVOTES">=150000)
+       filter("TR"."NUMVOTES">=150000)
+  10 - access("TB"."TCONST"="TR"."TCONST")
+  11 - filter("TB"."TITLETYPE"=U'movie' AND "TB"."STARTYEAR"<='2010' AND "TB"."G
+ENRES" LIKE
+
+              U'%Comedy%' AND "TB"."GENRES" LIKE U'%Romance%' AND "TB"."STARTYEA
+R">='2001' AND
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+
+              "TB"."GENRES"<>U'\005CN')
+  13 - storage("TP"."ORDERING"(+)='1' AND ("TP"."CATEGORY"(+)=U'actor' OR
+              "TP"."CATEGORY"(+)=U'actress') AND SYS_OP_BLOOM_FILTER(:BF0000,"TP
+"."TCONST"(+)))
+
+       filter("TP"."ORDERING"(+)='1' AND ("TP"."CATEGORY"(+)=U'actor' OR
+              "TP"."CATEGORY"(+)=U'actress') AND SYS_OP_BLOOM_FILTER(:BF0000,"TP
+"."TCONST"(+)))
+
+  15 - access("TP"."NCONST"="NB"."NCONST"(+))
+
+PLAN_TABLE_OUTPUT
+--------------------------------------------------------------------------------
+
+Note
+-----
+   - automatic DOP: Computed Degree of Parallelism is 1
+
+44 rows selected.
+
+SQL>
+SQL> SPOOL OFF
